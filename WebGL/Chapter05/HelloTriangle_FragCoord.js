@@ -1,0 +1,94 @@
+// HelloTriangle_FragCoord.js
+
+var VertexShaderSource = 
+'attribute vec4 position;\n' +
+'void main() {\n' +
+'   gl_Position = position;\n' + 
+'}\n';
+
+var FragmentShaderSource =
+'precision mediump float;\n' +
+'uniform float width;\n' +
+'uniform float height;\n' +
+'void main() {\n' +
+'   gl_FragColor = vec4(gl_FragCoord.x / width, 0.0, gl_FragCoord.y / height, 1.0);\n' +
+'}\n';
+
+var vertex = function (){
+    var self = this;
+//    		self.projectCode = PROJECT_CODE;
+    self.position;
+    self.color;
+    self.projectInfo = projectInfo;
+};
+
+function main() {
+    // Retrieve the <canvas> element
+    var canvas = document.getElementById("webgl");
+
+    if (!canvas) {
+        console.log("Failed to retrieve the <canvas> element");
+        return false;
+    }
+
+    var gl = getWebGLContext(canvas);
+
+    if (!gl) {
+        console.log('Failed to get the rendering context for WebGL.');
+        return;
+    }
+
+    if (!initShaders(gl, VertexShaderSource, FragmentShaderSource)) {
+        console.log('Failed to initialize shaders.');
+        return;
+    }
+
+    // 设置顶点位置
+    var n = initVertexBuffers(gl);
+
+    if (n < 0) {
+        console.log('Failed to set the positions of the vertices.');
+        return;
+    }
+
+    glUniform1f(gl, 'width', canvas.width);
+    glUniform1f(gl, 'heigh', canvas.height);
+
+    gl.clearColor(0.4, 0.6, 0.9, 1.0);
+
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    // 绘制一个三角形
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+function initVertexBuffers(gl) {
+    var vertices = new Float32Array([0.0,  0.5, 
+                                    -0.5, -0.5, 
+                                     0.5, -0.5]);
+
+    var n = 3;  // 点的个数
+
+    // 创建缓冲区对象
+    var vertexBuffer = gl.createBuffer();
+    if (!vertexBuffer) {
+        console.log('Failed to create the buffer object.');
+        return -1;
+    }
+
+    // 将缓冲区对象绑定到目标
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+
+    // 向缓冲区对象中写入数据
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    var positionLocation = getAttribLocation(gl, 'position');
+
+    // 将缓冲区对象分配给position变量
+    gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+    // 连接position变量与分配给它的缓冲区对象
+    gl.enableVertexAttribArray(positionLocation);
+
+    return n;
+}
