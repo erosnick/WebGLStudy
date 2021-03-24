@@ -1,7 +1,6 @@
 // MultiTexture.js
-import { render } from '@vue/runtime-dom';
 import {getWebGLContext, createProgram, loadShader, initShaders, getAttribLocation, 
-        glVertexAttribute1f, getUniformLocation, glUniform1f, setVertexAttribPointer} from './utils'
+        glVertexAttribute1f, getUniformLocation, glUniform1f, setVertexAttribPointer} from './utils.js'
 
 class WebGLRenderer {
     constructor() {

@@ -1,1 +1,1 @@
-import './src/MultiTexture'
+import './src/MultiTexture.js'
