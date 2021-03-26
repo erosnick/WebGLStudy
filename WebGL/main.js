@@ -1,1 +1,1 @@
-import './src/MultiTexture.js'
+import './src/LooAtTriangles.js'

@@ -160,6 +160,12 @@ function glUniform1f(gl, uniform, value) {
     gl.uniform1f(location, value); 
 }
 
+function glUniformMatrix4fv(gl, uniform, value) {
+    let location = getUniformLocation(gl, uniform);
+
+    gl.uniformMatrix4fv(location, false, value); 
+}
+
 function setVertexAttribPointer(gl, attribute, size, type, stride, offset) {
     let location = getAttribLocation(gl, attribute);
 
@@ -171,4 +177,4 @@ function setVertexAttribPointer(gl, attribute, size, type, stride, offset) {
 }
 
 export {getWebGLContext, createProgram, loadShader, initShaders, getAttribLocation, 
-        glVertexAttribute1f, getUniformLocation, glUniform1f, setVertexAttribPointer}
+        glVertexAttribute1f, getUniformLocation, glUniform1f, glUniformMatrix4fv, setVertexAttribPointer}

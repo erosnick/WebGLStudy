@@ -4,56 +4,73 @@
  * Otherwise, new matrix is initialized by identity matrix.
  * @param matrix source matrix(optional)
  */
-var Matrix4 = function(matrix) {
-    if (matrix && typeof matrix === 'object' && matrix.hasOwnProperty('elements')) {
+class Matrix4 {
+    constructor(matrix) {
+        if (matrix && typeof matrix === 'object' && matrix.hasOwnProperty('elements')) {
+            var source = matrix.elements;
+            var destination = new Float32Array(16);
+    
+            for (var i = 0; i < 16; i++) {
+                destination[i] = source[i];
+            }
+    
+            this.elements = destination;
+        } else {
+            this.elements = new Float32Array([1.0, 0.0, 0.0, 0.0, 
+                                              0.0, 1.0, 0.0, 0.0, 
+                                              0.0, 0.0, 1.0, 0.0, 
+                                              0.0, 0.0, 0.0, 1.0]);
+        }
+    }
+
+    /**
+     * Set the identity matrix.
+     * @return this
+     */
+    setIdentity() {
+        var elements = this.elements;
+        elements[0] = 1.0; elements[4] = 0.0; elements[8]  = 0.0; elements[12] = 0.0;
+        elements[1] = 0.0; elements[5] = 1.0; elements[9]  = 0.0; elements[13] = 0.0;
+        elements[2] = 0.0; elements[6] = 0.0; elements[10] = 1.0; elements[14] = 0.0;
+        elements[3] = 0.0; elements[7] = 0.0; elements[11] = 0.0; elements[15] = 1.0;
+        return this;
+    }
+
+    /**
+     * Copy matrix.
+     * @param matrix source matrix
+     * @return this
+     */
+    set(matrix) {
         var source = matrix.elements;
-        var destination = new Float32Array(16);
+        var destination = this.elements;
+
+        if (source == destination) {
+            return;
+        }
 
         for (var i = 0; i < 16; i++) {
             destination[i] = source[i];
         }
 
-        this.elements = destination;
-    } else {
-        this.elements = new Float32Array([1.0, 0.0, 0.0, 0.0, 
-                                          0.0, 1.0, 0.0, 0.0, 
-                                          0.0, 0.0, 1.0, 0.0, 
-                                          0.0, 0.0, 0.0, 1.0]);
-    }
-};
-
-/**
- * Set the identity matrix.
- * @return this
- */
-Matrix4.prototype.setIdentity = function() {
-    var elements = this.elements;
-    elements[0] = 1.0; elements[4] = 0.0; elements[8]  = 0.0; elements[12] = 0.0;
-    elements[1] = 0.0; elements[5] = 1.0; elements[9]  = 0.0; elements[13] = 0.0;
-    elements[2] = 0.0; elements[6] = 0.0; elements[10] = 1.0; elements[14] = 0.0;
-    elements[3] = 0.0; elements[7] = 0.0; elements[11] = 0.0; elements[15] = 1.0;
-    return this;
-};
-
-/**
- * Copy matrix.
- * @param matrix source matrix
- * @return this
- */
-Matrix4.prototype.set = function(matrix) {
-    var source = matrix.elements;
-    var destination = this.elements;
-
-    if (source == destination) {
-        return;
+        return this;
     }
 
-    for (var i = 0; i < 16; i++) {
-        destination[i] = source[i];
-    }
+    /**
+     * Generate lookAt matrix.
+     * @param eye
+     * @param target
+     * @param up 
+     * @return this
+     */
+    setLookAt(eye, target, up) {
+        let forward = normalize(target - eye);
 
-    return this;
-};
+        let right = cross
+
+        return this;
+    }
+}
 
 /**
  * Multiply the matrix from the right.
@@ -262,42 +279,62 @@ Matrix4.prototype.rotate = function(angle, x, y, z) {
  * If opt_src is specified, new vector is initialized by vector.
  * @param vector source vector(optional)
  */
-var Vector3 = function(vector) {
-    var elements = new Float32Array(3);
-    if (vector && typeof vector === 'object') {
-        elements[0] = vector[0]; elements[1] = vector[1]; elements[2] = vector[2];
+class Vector3 {
+    constructor(vector) {
+        let elements = new Float32Array(3);
+        if (vector && typeof vector === 'object') {
+            elements[0] = vector[0]; elements[1] = vector[1]; elements[2] = vector[2];
+        }
+    
+        this.elements = elements;
     }
 
-    this.elements = elements;
-};
+    constructor(x, y, z) {
+        let elements = new Float32Array(3);
+        elements[0] = x;
+        elements[1] = y;
+        elements[2] = z;
+        this.elements = elements;
+    }
 
-/**
-  * Normalize.
-  * @return this
-  */
- Vector3.prototype.normalize = function() {
-     var elements = this.elements;
-     var a = elements[0], b = elements[1], c = elements[2];
+    /**
+     * Normalize.
+     * @return this
+     */
+    normalize() {
+        return normalize(this);
+    }
+}
 
-     var length = Math.sqrt(a * a + b * b + c * c);
+function normalize(vector) {
+    var elements = vector.elements;
+    var a = elements[0], b = elements[1], c = elements[2];
 
-     if (length) {
-         if (length == 1) {
-             return this;
-         } else {
-             elements[0] = 0.0; 
-             elements[1] = 0.0; 
-             elements[2] = 0.0;
-             return this;
-         }
-     }
+    var length = Math.sqrt(a * a + b * b + c * c);
 
-     length = 1.0 / length;
-     elements[0] = a * length;
-     elements[1] = b * length;
-     elements[2] = c * length;
-     return this;
- };
+    if (length) {
+        if (length == 1) {
+            return vector;
+        } 
+    }
+    else {
+        elements[0] = 0.0; 
+        elements[1] = 0.0; 
+        elements[2] = 0.0;
+        return vector;
+    }
+
+    length = 1.0 / length;
+    elements[0] = a * length;
+    elements[1] = b * length;
+    elements[2] = c * length;
+    return vector;
+}
+
+function cross(a, b) {
+    return new Vector3(a.y * b.z - a.z * b.y,
+                       );
+}
 
  /**
  * Constructor of Vector4
@@ -315,3 +352,5 @@ var Vector4 = function(vector) {
 
     this.elements = elements;
 };
+
+export {Matrix4}

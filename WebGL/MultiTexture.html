@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear canvas</title>
+</head>
+<body>
+    <canvas id="webgl" width="400" height="400">
+        Please use a browser that supports "canvas".
+    </canvas>
+    <script type="module" src="/main.js"></script>
+    <script type="module" src="src/utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+    <div class="slidecontainer">
+        <input type="range" min="1" max="360" value="45" class="slider" id="rotateAngle">
+        <p>Rotate Speed: <span id="angle"></span></p>
+    </div>
+</body>
+</html>
