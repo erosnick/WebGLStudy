@@ -64,47 +64,94 @@ class Matrix4 {
      * @return this
      */
     setLookAt(eye, target, up) {
-        let forward = normalize(target - eye);
+        let forward = normalize(target.sub(eye));
 
-        let right = cross
+        let right = normalize(cross(forward, up));
+
+        up = cross(right, forward);
+
+        let viewMatrix = new Matrix4();
+
+        let elements = this.elements;
+
+        elements[0]  =  right.elements[0];
+        elements[4]  =  right.elements[1];
+        elements[8]  =  right.elements[2];
+        elements[1]  =  up.elements[0];
+        elements[5]  =  up.elements[1];
+        elements[9]  =  up.elements[2];
+        elements[2]  = -forward.elements[0];
+        elements[6]  = -forward.elements[1];
+        elements[10] = -forward.elements[2];
+        elements[3]  = -dot(right, eye);
+        elements[7]  = -dot(up, eye);
+        elements[11] =  dot(forward, eye);
+
+        return this;
+    }
+
+    perspective(aspect, fov, near, far) {
+        fov = fov * Math.PI / 180.0;
+        let tan = Math.tan(fov/2);
+
+        this.elements[0]  =  1.0 / tan;
+        this.elements[1]  =  0.0;
+        this.elements[2]  =  0.0;
+        this.elements[3]  =  0.0;
+
+        this.elements[4]  =  0.0;
+        this.elements[5]  =  1.0 / (tan * aspect);
+        this.elements[6]  =  0.0;
+        this.elements[7]  =  0.0;
+
+        let factor = 1.0 / (far - near);
+
+        this.elements[8]  =  0.0;
+        this.elements[9]  =  0.0;
+        this.elements[10] =  -(far + near) * factor;
+        this.elements[11] =  -2 * (far * near) * factor;
+        
+        this.elements[12] =  0.0;
+        this.elements[12] =  0.0;
+        this.elements[12] = -1.0;
+        this.elements[12] =  0.0;
+
+        return this;
+    }
+
+    /**
+     * Multiply the matrix from the right.
+     * @param other The multiply matrix
+     * @return this
+     */
+    concat(matrix) {
+        // Calculate elements = a * b
+        var elements = this.elements;
+        var a = this.elements;
+        var b = matrix.elements;
+
+        // If elements equals b, copy b to temporry matrix
+        if (elements == b) {
+            b = new Float32Array(16);
+            for (var i = 0; i < 16; i++) {
+                b[i] = elements[i];
+            }
+        }
+
+        var ai0, ai1, ai2, ai3;
+
+        for (var i = 0; i < 4; i++) {
+            ai0 = a[i]; ai1 = a[i + 4]; ai2 = a[i + 8]; ai3 = a[i + 12];    // rows
+
+            elements[i]      = ai0 * b[0]  + ai1 * b[1]  + ai2 * b[2]  + ai3 * b[3];
+            elements[i + 4]  = ai0 * b[4]  + ai1 * b[5]  + ai2 * b[6]  + ai3 * b[7];
+            elements[i + 8]  = ai0 * b[8]  + ai1 * b[9]  + ai2 * b[10] + ai3 * b[11];
+            elements[i + 12] = ai0 * b[12] + ai1 * b[13] + ai2 * b[14] + ai3 * b[15];
+        }
 
         return this;
     }
 }
-
-/**
- * Multiply the matrix from the right.
- * @param other The multiply matrix
- * @return this
- */
-Matrix4.prototype.concat = function(other) {
-
-    // Calculate elements = a * b
-    var elements = this.elements;
-    var a = this.elements;
-    var b = other.elements;
-
-    // If elements equals b, copy b to temporry matrix
-    if (elements == b) {
-        b = new Float32Array(16);
-        for (var i = 0; i < 16; i++) {
-            b[i] = elements[i];
-        }
-    }
-
-    var ai0, ai1, ai2, ai3;
-
-    for (var i = 0; i < 4; i++) {
-        ai0 = a[i]; ai1 = a[i + 4]; ai2 = a[i + 8]; ai3 = a[i + 12];    // rows
-
-        elements[i]      = ai0 * b[0]  + ai1 * b[1]  + ai2 * b[2]  + ai3 * b[3];
-        elements[i + 4]  = ai0 * b[4]  + ai1 * b[5]  + ai2 * b[6]  + ai3 * b[7];
-        elements[i + 8]  = ai0 * b[8]  + ai1 * b[9]  + ai2 * b[10] + ai3 * b[11];
-        elements[i + 12] = ai0 * b[12] + ai1 * b[13] + ai2 * b[14] + ai3 * b[15];
-    }
-
-    return this;
-};
 
 Matrix4.prototype.multiply = Matrix4.prototype.concat;
 
@@ -280,20 +327,19 @@ Matrix4.prototype.rotate = function(angle, x, y, z) {
  * @param vector source vector(optional)
  */
 class Vector3 {
-    constructor(vector) {
-        let elements = new Float32Array(3);
-        if (vector && typeof vector === 'object') {
-            elements[0] = vector[0]; elements[1] = vector[1]; elements[2] = vector[2];
-        }
-    
-        this.elements = elements;
-    }
-
     constructor(x, y, z) {
         let elements = new Float32Array(3);
-        elements[0] = x;
-        elements[1] = y;
-        elements[2] = z;
+        if (x != undefined && y != undefined && z != undefined) {
+            elements[0] = x;
+            elements[1] = y;
+            elements[2] = z;
+        }
+        else {
+            elements[0] = 0.0;
+            elements[1] = 0.0;
+            elements[2] = 0.0;
+        }
+
         this.elements = elements;
     }
 
@@ -304,13 +350,31 @@ class Vector3 {
     normalize() {
         return normalize(this);
     }
+
+    add(vector) {
+        return new Vector3(this.elements[0] + vector.elements[0], 
+                           this.elements[1] + vector.elements[1], 
+                           this.elements[2] + vector.elements[2]);
+    }
+
+    sub(vector) {
+        return new Vector3(this.elements[0] - vector.elements[0], 
+                           this.elements[1] - vector.elements[1], 
+                           this.elements[2] - vector.elements[2]);
+    }
+}
+
+function dot(a, b) {
+    return a.elements[0] * b.elements[0] + 
+           a.elements[1] * b.elements[1] +
+           a.elements[2] * b.elements[2];
 }
 
 function normalize(vector) {
-    var elements = vector.elements;
-    var a = elements[0], b = elements[1], c = elements[2];
+    let elements = vector.elements;
+    let a = elements[0], b = elements[1], c = elements[2];
 
-    var length = Math.sqrt(a * a + b * b + c * c);
+    let length = Math.sqrt(a * a + b * b + c * c);
 
     if (length) {
         if (length == 1) {
@@ -332,8 +396,9 @@ function normalize(vector) {
 }
 
 function cross(a, b) {
-    return new Vector3(a.y * b.z - a.z * b.y,
-                       );
+    return new Vector3(a.elements[1] * b.elements[2] - a.elements[2] * b.elements[1],
+                       a.elements[2] * b.elements[0] - a.elements[0] * b.elements[2],
+                       a.elements[0] * b.elements[1] - a.elements[1] * b.elements[0]);
 }
 
  /**
@@ -353,4 +418,4 @@ var Vector4 = function(vector) {
     this.elements = elements;
 };
 
-export {Matrix4}
+export {Matrix4, Vector3}

@@ -2,13 +2,13 @@
 import {getWebGLContext, createProgram, loadShader, initShaders, getAttribLocation, 
         glVertexAttribute1f, getUniformLocation, glUniform1f, glUniformMatrix4fv, setVertexAttribPointer} from './utils.js'
 
-import {Matrix4} from './Matrix4.js'
+import {Matrix4, Vector3} from './Matrix4.js'
 
 class WebGLRenderer {
     constructor() {
         this.canvas = null;
         this.gl = null;
-        this.n = 0;
+        this.indexCount = 0;
         this.VertexShaderSource = null;
         this.FragmentShaderSource = null;
         this.last = 0
@@ -93,23 +93,55 @@ class WebGLRenderer {
 
         let viewMatrix = new Matrix4();
 
-        glUniformMatrix4fv(this.gl, 'viewMatrix', viewMatrix.elements)
+        let eye = new Vector3(0.0, 0.0, 5.0);
+        let target = new Vector3(0.0, 0.0, -1.0);
+        let up = new Vector3(0.0, 1.0, 0.0);
+
+        viewMatrix.setLookAt(eye, target, up);
+
+        let projectMatrix = new Matrix4();
+
+        projectMatrix.perspective(this.canvas.width / this.canvas.height, 90.0, 1.0, 1000.0);
+
+        glUniformMatrix4fv(this.gl, 'viewMatrix', viewMatrix.elements);
+        glUniformMatrix4fv(this.gl, 'projectionMatrix', projectMatrix.elements);
     
         // 绘制三角形
-        this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, this.n);
+        this.gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_BYTE, 0);
     }
         
     initVertexBuffers() {
-        let vertices = new Float32Array([-0.5,  0.5, 0.0, 1.0,
-                                         -0.5, -0.5, 0.0, 0.0,
-                                          0.5,  0.5, 1.0, 1.0,
-                                          0.5, -0.5, 1.0, 0.0]);
-    
-        this.n = vertices.length / 4;  // 点的个数
+        let vertices = new Float32Array([-15.0,  15.0, -3.0, 0.0, 1.0,
+                                         -15.0, -15.0, -3.0, 0.0, 0.0,
+                                          15.0,  15.0, -3.0, 1.0, 1.0,
+                                          15.0, -15.0, -3.0, 1.0, 0.0,
+                                        
+                                         -5.0,  5.0, -2.0, 0.0, 1.0,
+                                         -5.0, -5.0, -2.0, 0.0, 0.0,
+                                          5.0,  5.0, -2.0, 1.0, 1.0,
+                                          5.0, -5.0, -2.0, 1.0, 0.0,
+                                        
+                                         -2.5,  2.5, -1.5, 0.0, 1.0,
+                                         -2.5, -2.5, -1.5, 0.0, 0.0,
+                                          2.5,  2.5, -1.5, 1.0, 1.0,
+                                          2.5, -2.5, -1.5, 1.0, 0.0]);
+
+        let indices = new Uint8Array([
+            0, 1, 2, 1, 3, 2,
+            4, 5, 6, 5, 7, 6,
+            8, 9, 10, 9, 11, 10,
+        ]);
+
+        this.indexCount = indices.length;
 
         this.vao = this.createVertexArray();
 
         this.bindVertexArray(this.vao);
+
+        let indexBuffer = this.createBuffer();
+
+        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
     
         // 创建缓冲区对象
         let vertexBuffer = this.createBuffer();
@@ -126,8 +158,8 @@ class WebGLRenderer {
     
         let size = vertices.BYTES_PER_ELEMENT;
     
-        setVertexAttribPointer(this.gl, 'position', 2, this.gl.FLOAT, size * 4, 0);
-        setVertexAttribPointer(this.gl, 'textureCoord', 2, this.gl.FLOAT, size * 4, size * 2);
+        setVertexAttribPointer(this.gl, 'position', 3, this.gl.FLOAT, size * 5, 0);
+        setVertexAttribPointer(this.gl, 'textureCoord', 2, this.gl.FLOAT, size * 5, size * 3);
 
         this.bindVertexArray(null);
     }
@@ -185,6 +217,8 @@ class WebGLRenderer {
     }
 
     prepare() {
+        this.gl.enable(this.gl.DEPTH_TEST);
+
         let loadShaders = async () => {
             this.VertexShaderSource = await (await fetch('./resources/shaders/vertexShader.vert')).text();
             this.FragmentShaderSource = await (await fetch('./resources/shaders/fragmentShader.frag')).text();
