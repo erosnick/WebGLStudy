@@ -93,38 +93,38 @@ class WebGLRenderer {
 
         let viewMatrix = new Matrix4();
 
-        let eye = new Vector3(0.0, 0.0, 5.0);
-        let target = new Vector3(0.0, 0.0, -1.0);
+        let eye = new Vector3(0.0, 0.0, 10.0);
+        let target = new Vector3(this.slider.value / 10.0, 0.0, -1.0);
         let up = new Vector3(0.0, 1.0, 0.0);
 
         viewMatrix.setLookAt(eye, target, up);
 
         let projectMatrix = new Matrix4();
 
-        projectMatrix.perspective(this.canvas.width / this.canvas.height, 90.0, 1.0, 1000.0);
+        projectMatrix.setPerspective(this.canvas.width / this.canvas.height, 90.0, 1.0, 1000.0);
 
         glUniformMatrix4fv(this.gl, 'viewMatrix', viewMatrix.elements);
-        glUniformMatrix4fv(this.gl, 'projectionMatrix', projectMatrix.elements);
+        // glUniformMatrix4fv(this.gl, 'projectionMatrix', projectMatrix.elements);
     
         // 绘制三角形
         this.gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_BYTE, 0);
     }
         
     initVertexBuffers() {
-        let vertices = new Float32Array([-15.0,  15.0, -3.0, 0.0, 1.0,
-                                         -15.0, -15.0, -3.0, 0.0, 0.0,
-                                          15.0,  15.0, -3.0, 1.0, 1.0,
-                                          15.0, -15.0, -3.0, 1.0, 0.0,
+        let vertices = new Float32Array([-20.0,  20.0, -3.0, 0.0, 1.0,
+                                         -20.0, -20.0, -3.0, 0.0, 0.0,
+                                          20.0,  20.0, -3.0, 1.0, 1.0,
+                                          20.0, -20.0, -3.0, 1.0, 0.0,
                                         
-                                         -5.0,  5.0, -2.0, 0.0, 1.0,
-                                         -5.0, -5.0, -2.0, 0.0, 0.0,
-                                          5.0,  5.0, -2.0, 1.0, 1.0,
-                                          5.0, -5.0, -2.0, 1.0, 0.0,
+                                         -10.0,  10.0, -2.0, 0.0, 1.0,
+                                         -10.0, -10.0, -2.0, 0.0, 0.0,
+                                          10.0,  10.0, -2.0, 1.0, 1.0,
+                                          10.0, -10.0, -2.0, 1.0, 0.0,
                                         
-                                         -2.5,  2.5, -1.5, 0.0, 1.0,
-                                         -2.5, -2.5, -1.5, 0.0, 0.0,
-                                          2.5,  2.5, -1.5, 1.0, 1.0,
-                                          2.5, -2.5, -1.5, 1.0, 0.0]);
+                                         -5.0,  5.0, -1.5, 0.0, 1.0,
+                                         -5.0, -5.0, -1.5, 0.0, 0.0,
+                                          5.0,  5.0, -1.5, 1.0, 1.0,
+                                          5.0, -5.0, -1.5, 1.0, 0.0]);
 
         let indices = new Uint8Array([
             0, 1, 2, 1, 3, 2,

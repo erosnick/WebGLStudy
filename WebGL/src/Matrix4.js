@@ -70,19 +70,30 @@ class Matrix4 {
 
         up = cross(right, forward);
 
-        let viewMatrix = new Matrix4();
-
         let elements = this.elements;
 
-        elements[0]  =  right.elements[0];
-        elements[4]  =  right.elements[1];
-        elements[8]  =  right.elements[2];
-        elements[1]  =  up.elements[0];
-        elements[5]  =  up.elements[1];
-        elements[9]  =  up.elements[2];
-        elements[2]  = -forward.elements[0];
-        elements[6]  = -forward.elements[1];
-        elements[10] = -forward.elements[2];
+        // elements[0]  =  right.x;
+        // elements[4]  =  right.y;
+        // elements[8]  =  right.z;
+        // elements[1]  =  up.x;
+        // elements[5]  =  up.y;
+        // elements[9]  =  up.z;
+        // elements[2]  = -forward.x;
+        // elements[6]  = -forward.y;
+        // elements[10] = -forward.z;
+        // elements[3]  = -dot(right, eye);
+        // elements[7]  = -dot(up, eye);
+        // elements[11] =  dot(forward, eye);
+
+        elements[0]  =  right.x;
+        elements[1]  =  right.y;
+        elements[2]  =  right.z;
+        elements[4]  =  up.x;
+        elements[5]  =  up.y;
+        elements[6]  =  up.z;
+        elements[8]  = -forward.x;
+        elements[9]  = -forward.y;
+        elements[10] = -forward.z;
         elements[3]  = -dot(right, eye);
         elements[7]  = -dot(up, eye);
         elements[11] =  dot(forward, eye);
@@ -90,31 +101,31 @@ class Matrix4 {
         return this;
     }
 
-    perspective(aspect, fov, near, far) {
+    setPerspective(aspect, fov, near, far) {
         fov = fov * Math.PI / 180.0;
         let tan = Math.tan(fov/2);
 
-        this.elements[0]  =  1.0 / tan;
-        this.elements[1]  =  0.0;
-        this.elements[2]  =  0.0;
-        this.elements[3]  =  0.0;
-
+        this.elements[0]  =  1.0 / (tan * aspect);
         this.elements[4]  =  0.0;
-        this.elements[5]  =  1.0 / (tan * aspect);
-        this.elements[6]  =  0.0;
-        this.elements[7]  =  0.0;
+        this.elements[8]  =  0.0;
+        this.elements[12]  =  0.0;
+
+        this.elements[1]  =  0.0;
+        this.elements[5]  =  1.0 / tan;
+        this.elements[9]  =  0.0;
+        this.elements[13]  =  0.0;
 
         let factor = 1.0 / (far - near);
 
-        this.elements[8]  =  0.0;
-        this.elements[9]  =  0.0;
-        this.elements[10] =  -(far + near) * factor;
-        this.elements[11] =  -2 * (far * near) * factor;
+        // this.elements[2]  =  0.0;
+        // this.elements[6]  =  0.0;
+        // this.elements[10] =  -(far + near) * factor;
+        // this.elements[14] =  -2 * (far * near) * factor;
         
-        this.elements[12] =  0.0;
-        this.elements[12] =  0.0;
-        this.elements[12] = -1.0;
-        this.elements[12] =  0.0;
+        // this.elements[3] =  0.0;
+        // this.elements[7] =  0.0;
+        // this.elements[11] = -1.0;
+        // this.elements[15] =  0.0;
 
         return this;
     }
@@ -328,19 +339,16 @@ Matrix4.prototype.rotate = function(angle, x, y, z) {
  */
 class Vector3 {
     constructor(x, y, z) {
-        let elements = new Float32Array(3);
         if (x != undefined && y != undefined && z != undefined) {
-            elements[0] = x;
-            elements[1] = y;
-            elements[2] = z;
+            this.x = x;
+            this.y = y;
+            this.z = z;
         }
         else {
-            elements[0] = 0.0;
-            elements[1] = 0.0;
-            elements[2] = 0.0;
+            this.x = 0.0;
+            this.y = 0.0;
+            this.z = 0.0;
         }
-
-        this.elements = elements;
     }
 
     /**
@@ -352,27 +360,26 @@ class Vector3 {
     }
 
     add(vector) {
-        return new Vector3(this.elements[0] + vector.elements[0], 
-                           this.elements[1] + vector.elements[1], 
-                           this.elements[2] + vector.elements[2]);
+        return new Vector3(this.x + vector.x, 
+                           this.y + vector.y, 
+                           this.z + vector.z);
     }
 
     sub(vector) {
-        return new Vector3(this.elements[0] - vector.elements[0], 
-                           this.elements[1] - vector.elements[1], 
-                           this.elements[2] - vector.elements[2]);
+        return new Vector3(this.x - vector.x, 
+                           this.y - vector.y, 
+                           this.z - vector.z);
     }
 }
 
 function dot(a, b) {
-    return a.elements[0] * b.elements[0] + 
-           a.elements[1] * b.elements[1] +
-           a.elements[2] * b.elements[2];
+    return a.x * b.x + 
+           a.y * b.y +
+           a.z * b.z;
 }
 
 function normalize(vector) {
-    let elements = vector.elements;
-    let a = elements[0], b = elements[1], c = elements[2];
+    let a = vector.x, b = vector.y, c = vector.z;
 
     let length = Math.sqrt(a * a + b * b + c * c);
 
@@ -382,23 +389,23 @@ function normalize(vector) {
         } 
     }
     else {
-        elements[0] = 0.0; 
-        elements[1] = 0.0; 
-        elements[2] = 0.0;
+        vector.x = 0.0;
+        vector.y = 0.0;
+        vector.z = 0.0;
         return vector;
     }
 
-    length = 1.0 / length;
-    elements[0] = a * length;
-    elements[1] = b * length;
-    elements[2] = c * length;
+    let inverseLength = 1.0 / length;
+    vector.x = a * inverseLength;
+    vector.y = b * inverseLength;
+    vector.z = c * inverseLength;
     return vector;
 }
 
 function cross(a, b) {
-    return new Vector3(a.elements[1] * b.elements[2] - a.elements[2] * b.elements[1],
-                       a.elements[2] * b.elements[0] - a.elements[0] * b.elements[2],
-                       a.elements[0] * b.elements[1] - a.elements[1] * b.elements[0]);
+    return new Vector3(a.y * b.y - a.z * b.y,
+                       a.z * b.x - a.x * b.z,
+                       a.x * b.y - a.y * b.x);
 }
 
  /**
