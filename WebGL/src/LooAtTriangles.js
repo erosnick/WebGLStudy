@@ -16,15 +16,28 @@ class WebGLRenderer {
     }
 
     initSlider() {
-        let slider = document.getElementById("rotateAngle");
-        let angle = document.getElementById("angle");
-        angle.innerHTML = slider.value + '°/s';
+        let rotateAngleXSlider = document.getElementById("rotateAngleX");
+        let angleX = document.getElementById("angleX");
+        angleX.innerHTML = rotateAngleXSlider.value + '°/s';
     
-        slider.oninput = function() {
-            angle.innerHTML = this.value + '°/s';
+        rotateAngleXSlider.oninput = function() {
+            angleX.innerHTML = this.rotateAngleXSlider.value + '°/s';
         }
+
+        let rotateAngleYSlider = document.getElementById("rotateAngleY");
+        let angleY = document.getElementById("angleY");
+        angleY.innerHTML = rotateAngleYSlider.value + '°/s';
     
-        this.slider = slider;
+        rotateAngleYSlider.oninput = function() {
+            angleX.innerHTML = this.rotateAngleYSlider.value + '°/s';
+        }
+
+
+        let offsetSlider = document.getElementById("offset");
+    
+        this.rotateAngleXSlider = rotateAngleXSlider;
+        this.rotateAngleYSlider = rotateAngleYSlider;
+        this.offsetSlider = offsetSlider;
     }
 
     createCanvas() {
@@ -53,15 +66,16 @@ class WebGLRenderer {
 
     run() {
         // 三角形当前的角度
-        let currentAngle = 90.0;
+        this.rotationAngleX = 0.0;
+        this.rotationAngleY = 0.0;
 
         // 记录上一次调用函数的时刻
         this.last = Date.now();
 
         // 开始绘制三角形
         let tick = function(renderer) {
-            currentAngle = renderer.update(currentAngle);
-            renderer.draw(currentAngle, null, null);
+            renderer.update();
+            renderer.draw();
             // 用lambda包装一下回调函数，使得this能够被持续传入下次调用
             requestAnimationFrame(() => {
                 tick(renderer);
@@ -71,7 +85,7 @@ class WebGLRenderer {
         tick(this);
     }
 
-    update(angle) {
+    update() {
         // 计算距离上次调用经过多长的时间
         let now = Date.now();
     
@@ -79,52 +93,117 @@ class WebGLRenderer {
         this.last = now;
     
         // 根据距离上次调用的时间，更新当前旋转角度
-        let newAngle = angle + (this.slider.value * elapsed) / 1000.0;
-    
-        return newAngle %= 360.0;
+        this.rotationAngleX += (this.rotateAngleXSlider.value * elapsed) / 1000.0;
+        this.rotationAngleX % 360.0;
+
+        this.rotationAngleY += (this.rotateAngleYSlider.value * elapsed) / 1000.0;
+        this.rotationAngleY % 360.0;
     }
 
-    draw(currentAngle, transformMatrix, transformMatrixLocation) {
+    draw() {
         this.bindVertexArray(this.vao);
 
+        this.gl.enable(this.gl.DEPTH_TEST);
+        this.gl.enable(this.gl.CULL_FACE);
+        this.gl.cullFace(this.gl.BACK);
+        this.gl.frontFace(this.gl.CCW);
+        this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.GL_DEPTH_BUFFER_BIT);
         this.gl.clearColor(0.4, 0.6, 0.9, 1.0);
-    
-        this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+
+        let rotationMatrixX = new Matrix4();
+
+        rotationMatrixX.setRotationX(this.rotationAngleX);
+
+        let rotationMatrixY = new Matrix4();
+
+        rotationMatrixY.setRotationY(this.rotationAngleY);
 
         let viewMatrix = new Matrix4();
 
-        let eye = new Vector3(0.0, 0.0, 10.0);
-        let target = new Vector3(this.slider.value / 10.0, 0.0, -1.0);
+        let eye = new Vector3(0.0, 0.0, 5.0);
+        let target = new Vector3(0.0, 0.0, -1.0);
         let up = new Vector3(0.0, 1.0, 0.0);
 
         viewMatrix.setLookAt(eye, target, up);
+        
+        let projectionMatrix = new Matrix4();
 
-        let projectMatrix = new Matrix4();
-
-        projectMatrix.setPerspective(this.canvas.width / this.canvas.height, 90.0, 1.0, 1000.0);
+        projectionMatrix.setPerspective(45.0, this.canvas.width / this.canvas.height, 0.1, 100.0);
 
         glUniformMatrix4fv(this.gl, 'viewMatrix', viewMatrix.elements);
-        // glUniformMatrix4fv(this.gl, 'projectionMatrix', projectMatrix.elements);
+        glUniformMatrix4fv(this.gl, 'rotationMatrix', rotationMatrixX.elements);
+        glUniformMatrix4fv(this.gl, 'projectionMatrix', projectionMatrix.elements);
     
         // 绘制三角形
-        this.gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_BYTE, 0);
+        // this.gl.drawElements(this.gl.TRIANGLES, this.indexCount, this.gl.UNSIGNED_BYTE, 0);
+        this.gl.drawArrays(this.gl.TRIANGLES, 0, 36);
     }
         
     initVertexBuffers() {
-        let vertices = new Float32Array([-20.0,  20.0, -3.0, 0.0, 1.0,
-                                         -20.0, -20.0, -3.0, 0.0, 0.0,
-                                          20.0,  20.0, -3.0, 1.0, 1.0,
-                                          20.0, -20.0, -3.0, 1.0, 0.0,
+        // let vertices = new Float32Array([-20.0,  20.0, -9.0, 0.0, 1.0,
+        //                                  -20.0, -20.0, -9.0, 0.0, 0.0,
+        //                                   20.0,  20.0, -9.0, 1.0, 1.0,
+        //                                   20.0, -20.0, -9.0, 1.0, 0.0,
                                         
-                                         -10.0,  10.0, -2.0, 0.0, 1.0,
-                                         -10.0, -10.0, -2.0, 0.0, 0.0,
-                                          10.0,  10.0, -2.0, 1.0, 1.0,
-                                          10.0, -10.0, -2.0, 1.0, 0.0,
+        //                                  -10.0,  10.0, -7.0, 0.0, 1.0,
+        //                                  -10.0, -10.0, -7.0, 0.0, 0.0,
+        //                                   10.0,  10.0, -7.0, 1.0, 1.0,
+        //                                   10.0, -10.0, -7.0, 1.0, 0.0,
                                         
-                                         -5.0,  5.0, -1.5, 0.0, 1.0,
-                                         -5.0, -5.0, -1.5, 0.0, 0.0,
-                                          5.0,  5.0, -1.5, 1.0, 1.0,
-                                          5.0, -5.0, -1.5, 1.0, 0.0]);
+        //                                  -5.0,  5.0, -5.0, 0.0, 1.0,
+        //                                  -5.0, -5.0, -5.0, 0.0, 0.0,
+        //                                   5.0,  5.0, -5.0, 1.0, 1.0,
+        //                                   5.0, -5.0, -5.0, 1.0, 0.0]);
+
+        let vertices = new Float32Array([
+             // 背面
+             0.5,  0.5, -0.5,  0.0,  1.0,
+             0.5, -0.5, -0.5,  0.0,  0.0,
+            -0.5, -0.5, -0.5,  1.0,  0.0,
+             0.5,  0.5, -0.5,  0.0,  1.0,
+            -0.5, -0.5, -0.5,  1.0,  0.0,
+            -0.5,  0.5, -0.5,  1.0,  1.0,
+
+             // 正面
+            -0.5,  0.5,  0.5,  0.0,  1.0,
+            -0.5, -0.5,  0.5,  0.0,  0.0,
+             0.5, -0.5,  0.5,  1.0,  0.0,
+             0.5,  0.5,  0.5,  1.0,  1.0,
+            -0.5,  0.5,  0.5,  0.0,  1.0,
+             0.5, -0.5,  0.5,  1.0,  0.0,
+
+            // 左面
+            -0.5,  0.5, -0.5, 0.0,  1.0,
+            -0.5, -0.5, -0.5, 0.0,  0.0,
+            -0.5, -0.5,  0.5, 1.0,  0.0,
+            -0.5,  0.5, -0.5, 0.0,  1.0,
+            -0.5, -0.5,  0.5, 1.0,  0.0,
+            -0.5,  0.5,  0.5, 1.0,  1.0,
+
+            // 右面 
+            0.5,  0.5,  0.5,  0.0,  1.0,
+            0.5, -0.5,  0.5,  0.0,  0.0,
+            0.5, -0.5, -0.5,  1.0,  0.0,
+            0.5,  0.5,  0.5,  0.0,  1.0,
+            0.5, -0.5, -0.5,  1.0,  0.0,
+            0.5,  0.5, -0.5,  1.0,  1.0,
+
+            // 顶面
+            -0.5,  0.5, -0.5,  0.0,  1.0,
+            -0.5,  0.5,  0.5,  0.0,  0.0,
+             0.5,  0.5,  0.5,  1.0,  0.0,
+            -0.5,  0.5, -0.5,  0.0,  1.0,
+             0.5,  0.5,  0.5,  1.0,  0.0,
+             0.5,  0.5, -0.5,  1.0,  1.0,
+
+            // 底面
+            -0.5, -0.5, -0.5,  0.0, 0.0,
+             0.5, -0.5, -0.5,  1.0, 0.0,
+             0.5, -0.5,  0.5,  1.0, 1.0,
+             0.5, -0.5,  0.5,  1.0, 1.0,
+            -0.5, -0.5,  0.5,  0.0, 1.0,
+            -0.5, -0.5, -0.5,  0.0, 0.0,
+        ]);
 
         let indices = new Uint8Array([
             0, 1, 2, 1, 3, 2,
@@ -133,6 +212,7 @@ class WebGLRenderer {
         ]);
 
         this.indexCount = indices.length;
+        this.vertexCount = vertices.length / 5;
 
         this.vao = this.createVertexArray();
 
@@ -140,8 +220,8 @@ class WebGLRenderer {
 
         let indexBuffer = this.createBuffer();
 
-        this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-        this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
+        // this.gl.bindBuffer(this.gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        // this.gl.bufferData(this.gl.ELEMENT_ARRAY_BUFFER, indices, this.gl.STATIC_DRAW);
     
         // 创建缓冲区对象
         let vertexBuffer = this.createBuffer();
@@ -166,7 +246,7 @@ class WebGLRenderer {
         
     initTextures() {
         this.createImage('./resources/textures/sky.jpg', 'albedoSampler', this.gl.TEXTURE0, 0);
-        this.createImage('./resources/textures/circle.gif', 'maskSampler', this.gl.TEXTURE1, 1);
+        this.createImage('./resources/textures/rexie01.jpg', 'maskSampler', this.gl.TEXTURE1, 1);
     
         return true;
     }
@@ -217,8 +297,6 @@ class WebGLRenderer {
     }
 
     prepare() {
-        this.gl.enable(this.gl.DEPTH_TEST);
-
         let loadShaders = async () => {
             this.VertexShaderSource = await (await fetch('./resources/shaders/vertexShader.vert')).text();
             this.FragmentShaderSource = await (await fetch('./resources/shaders/fragmentShader.frag')).text();

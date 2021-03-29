@@ -56,6 +56,40 @@ class Matrix4 {
         return this;
     }
 
+    setRotationX(angle) {
+        let radian = Math.PI * angle / 180.0;
+        let cosb = Math.cos(radian);
+        let sinb = Math.sin(radian);
+
+        let elements = new Float32Array([
+            1.0,  0.0,  0.0,  0.0,
+            0.0,  cosb, sinb, 0.0,
+            0.0, -sinb, cosb, 0.0,
+            0.0,  0.0,  0.0,  1.0
+        ]);
+
+        this.elements = elements;
+
+        return this;
+    }
+
+    setRotationY(angle) {
+        let radian = Math.PI * angle / 180.0;
+        let cosb = Math.cos(radian);
+        let sinb = Math.sin(radian);
+
+        let elements = new Float32Array([
+            1.0,  0.0,  0.0,  0.0,
+            0.0,  cosb, sinb, 0.0,
+            0.0, -sinb, cosb, 0.0,
+            0.0,  0.0,  0.0,  1.0
+        ]);
+
+        this.elements = elements;
+
+        return this;
+    }
+
     /**
      * Generate lookAt matrix.
      * @param eye
@@ -72,19 +106,6 @@ class Matrix4 {
 
         let elements = this.elements;
 
-        // elements[0]  =  right.x;
-        // elements[4]  =  right.y;
-        // elements[8]  =  right.z;
-        // elements[1]  =  up.x;
-        // elements[5]  =  up.y;
-        // elements[9]  =  up.z;
-        // elements[2]  = -forward.x;
-        // elements[6]  = -forward.y;
-        // elements[10] = -forward.z;
-        // elements[3]  = -dot(right, eye);
-        // elements[7]  = -dot(up, eye);
-        // elements[11] =  dot(forward, eye);
-
         elements[0]  =  right.x;
         elements[1]  =  right.y;
         elements[2]  =  right.z;
@@ -94,38 +115,46 @@ class Matrix4 {
         elements[8]  = -forward.x;
         elements[9]  = -forward.y;
         elements[10] = -forward.z;
-        elements[3]  = -dot(right, eye);
-        elements[7]  = -dot(up, eye);
-        elements[11] =  dot(forward, eye);
+        elements[12] = -dot(right, eye);
+        elements[13] = -dot(up, eye);
+        elements[14] =  dot(forward, eye);
 
         return this;
     }
 
-    setPerspective(aspect, fov, near, far) {
+    /**
+     * Generate perspective matrix.
+     * @param fov
+     * @param aspect
+     * @param near 
+     * @param far 
+     * @return this
+     */
+    setPerspective(fov, aspect, near, far) {
         fov = fov * Math.PI / 180.0;
-        let tan = Math.tan(fov/2);
+        let tanHalfFovY = Math.tan(fov/2);
 
-        this.elements[0]  =  1.0 / (tan * aspect);
-        this.elements[4]  =  0.0;
-        this.elements[8]  =  0.0;
-        this.elements[12]  =  0.0;
+        let elements = this.elements;
 
-        this.elements[1]  =  0.0;
-        this.elements[5]  =  1.0 / tan;
-        this.elements[9]  =  0.0;
-        this.elements[13]  =  0.0;
+        elements[0] =  1.0 / (tanHalfFovY * aspect);
+        elements[1] =  0.0;
+        elements[2] =  0.0;
+        elements[3] =  0.0;
 
-        let factor = 1.0 / (far - near);
+        elements[4] =  0.0;
+        elements[5] =  1.0 / tanHalfFovY;
+        elements[6] =  0.0;
+        elements[7] =  0.0;
 
-        // this.elements[2]  =  0.0;
-        // this.elements[6]  =  0.0;
-        // this.elements[10] =  -(far + near) * factor;
-        // this.elements[14] =  -2 * (far * near) * factor;
+        elements[8]  =  0.0;
+        elements[9]  =  0.0;
+        elements[10] =  -(far + near) / (far - near);
+        elements[11] =  -1.0;
         
-        // this.elements[3] =  0.0;
-        // this.elements[7] =  0.0;
-        // this.elements[11] = -1.0;
-        // this.elements[15] =  0.0;
+        elements[12] =  0.0;
+        elements[13] =  0.0;
+        elements[14] =  -(2 * far * near) / (far - near);
+        elements[15] =  0.0;
 
         return this;
     }

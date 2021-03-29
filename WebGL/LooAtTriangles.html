@@ -7,15 +7,23 @@
     <title>Clear canvas</title>
 </head>
 <body>
-    <canvas id="webgl" width="400" height="400">
+    <canvas id="webgl" width="1280" height="720">
         Please use a browser that supports "canvas".
     </canvas>
     <script type="module" src="/main.js"></script>
     <script type="module" src="src/utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script>
+    <script src='https://git.io/glm-js.min.js'></script>
+    <!-- <script src="https://cdn.jsdelivr.net/gh/stevenjoezhang/live2d-widget@latest/autoload.js"></script> -->
     <div class="slidecontainer">
-        <input type="range" min="-10" max="10" value="0" class="slider" id="rotateAngle">
-        <p>Rotate Speed: <span id="angle"></span></p>
+        <input type="range" min="-90" max="90" value="0" class="slider" id="rotateAngleX">
+        <p>X Rotate Speed: <span id="angleX"></span></p>
+    </div>
+    <div class="slidecontainer">
+        <input type="range" min="-90" max="90" value="0" class="slider" id="rotateAngleY">
+        <p>Y Rotate Speed: <span id="angleY"></span></p>
+    </div>
+    <div class="slidecontainer">
+        <input type="range" min="0" max="10" value="0" class="slider" id="offset">
     </div>
 </body>
 </html>
